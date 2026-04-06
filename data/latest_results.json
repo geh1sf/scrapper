@@ -1,9 +1,40 @@
 {
-  "timestamp": "2026-04-06T08:45:07.880387+00:00",
-  "new_properties": [],
+  "timestamp": "2026-04-06T08:49:01.738423+00:00",
+  "new_properties": [
+    {
+      "title": "Продава се еднофамилна къща с морска панорама и АКТ 14 в гр. Бургас, кв. Крайморие-от Инвеститора!",
+      "price": "330 000 €",
+      "location": "Крайморие, Бургас",
+      "area": "198 кв.м",
+      "floor": "",
+      "url": "https://www.alo.bg/prodava-se-ednofamilna-kashta-s-morska-panorama-i-akt-14-v-gr-burgas-kv-kraimorie-ot-investitora-10567631",
+      "lister": "вчера",
+      "search_city": "Бургас - houses"
+    },
+    {
+      "title": "Двуетажна къща с модерна визия на брега на морето в кв. Крайморие",
+      "price": "290 000 €",
+      "location": "Крайморие, Бургас",
+      "area": "159 кв.м",
+      "floor": "",
+      "url": "https://www.alo.bg/dvuetajna-kashta-s-moderna-viziya-na-brega-na-moreto-v-kv-kraimorie-10690703",
+      "lister": "Kafka Seaside Villageвчера",
+      "search_city": "Бургас - houses"
+    },
+    {
+      "title": "Къща на два етажа с модерна визия на брега на морето в кв. ”Крайморие”",
+      "price": "216 000 €",
+      "location": "Крайморие, Бургас",
+      "area": "131.17 кв.м",
+      "floor": "6 ет",
+      "url": "https://www.alo.bg/kashta-na-dva-etaja-s-moderna-viziya-na-brega-na-moreto-v-kv-kraimorie-10657268",
+      "lister": "LUXIMMO FINEST ESTATESвчера",
+      "search_city": "Бургас - houses"
+    }
+  ],
   "stats": {
-    "total_properties_seen": 16,
-    "properties_today": 16
+    "total_properties_seen": 19,
+    "properties_today": 19
   },
-  "total_properties_scanned": 72
+  "total_properties_scanned": 87
 }
