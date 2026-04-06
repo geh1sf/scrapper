@@ -1,0 +1,15 @@
+[
+  {
+    "date": "2026-04-06",
+    "timestamp": "2026-04-06T10:57:11.295835+00:00",
+    "total_current": 90,
+    "new_today": 90,
+    "argosdom_count": 0,
+    "summary": {
+      "apartments": 0,
+      "houses": 27,
+      "commercial": 0,
+      "land": 12
+    }
+  }
+]
