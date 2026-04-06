@@ -31,15 +31,15 @@ class KraimorieTracker:
         """Initialize the tracker"""
         self.base_url = "https://www.alo.bg"
 
-        # Apartments and Houses only for Kraimorie
+        # Apartments and Houses only for Kraimorie - TODAY'S listings only
         self.search_urls = [
             {
-                "name": "Kraimorie - Apartments",
-                "url": "https://www.alo.bg/obiavi/imoti-prodajbi/apartamenti-stai/?region_id=2&location_ids=300&section_ids=25"
+                "name": "Kraimorie - Apartments (Today)",
+                "url": "https://www.alo.bg/obiavi/imoti-prodajbi/apartamenti-stai/?region_id=2&location_ids=300&section_ids=25&after_date=dnes"
             },
             {
-                "name": "Kraimorie - Houses",
-                "url": "https://www.alo.bg/obiavi/imoti-prodajbi/kashti-vili/?region_id=2&location_ids=300&section_ids=25"
+                "name": "Kraimorie - Houses (Today)",
+                "url": "https://www.alo.bg/obiavi/imoti-prodajbi/kashti-vili/?region_id=2&location_ids=300&section_ids=25&after_date=dnes"
             }
         ]
 
