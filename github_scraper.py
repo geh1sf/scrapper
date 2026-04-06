@@ -15,6 +15,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
 from property_scraper import AloPropertyScraper
 from persistence import PropertyTracker
+from sendgrid_notifier import SendGridNotifier
 
 def setup_logging():
     """Setup logging for GitHub Actions"""
@@ -54,6 +55,17 @@ def main():
 
         # Filter new properties
         new_properties = tracker.filter_new_properties(all_properties)
+
+        # Send email notification if configured
+        notifier = SendGridNotifier()
+        if notifier.enabled:
+            email_sent = notifier.send_notification(new_properties)
+            if email_sent:
+                logging.info("📧 Email notification sent successfully")
+            else:
+                logging.warning("📧 Email notification failed")
+        else:
+            logging.info("📧 Email not configured, skipping notification")
 
         # Save results
         save_results(new_properties, tracker.get_stats(), all_properties)
