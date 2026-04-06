@@ -2,41 +2,42 @@
 # Edit these values to change your search criteria
 
 locations:
-  - city: "София"    # Sofia
-    region_id: 22
-    location_ids: 4342
-  - city: "Бургас"   # Burgas (all areas including Kraimorie)
+  - city: "Kraimorie"   # Kraimorie specifically
     region_id: 2
-    location_ids: null  # Will search all Burgas region
-  # Add more cities here as needed
+    location_ids: 300   # Kraimorie location ID
 
-# Kraimorie-specific filters
-kraimorie_keywords:
-  - "крайморие"
-  - "kraimorie"
-  - "краймориe"
+# Removed - using direct location ID instead of keywords
 
-# Property types to search
+# Property types to search - apartments and houses only
 search_property_types:
-  - "apartments"  # Apartments/rooms
-  - "houses"      # Houses/villas
+  - "apartments"    # All apartment types
+  - "houses"        # All house/villa types
 
 property_type:
-  - "Тристаен"    # 3-room apartment
+  # All Apartment Types
+  - "Едностаен"   # 1-room apartment
   - "Двустаен"    # 2-room apartment
+  - "Тристаен"    # 3-room apartment
   - "Четиристаен" # 4-room apartment
+  - "Петстаен"    # 5-room apartment
+  - "Мезонет"     # maisonette
+  - "Студио"      # studio
+  - "апартамент"  # general apartment
+  # All House Types
   - "къща"        # house
   - "вила"        # villa
+  - "таунхаус"    # townhouse
+  - "еднофамилна" # single-family house
 
 price_range:
-  min: 100000  # Minimum price in BGN
-  max: 300000  # Maximum price in BGN
+  min: 50000   # Minimum price in BGN (for all property types)
+  max: 800000  # Maximum price in BGN (to include houses/villas)
 
 features:
-  min_floor: 1     # Minimum floor (0 for ground floor)
-  max_floor: 10    # Maximum floor
-  min_area: 60     # Minimum area in square meters
-  max_area: 120    # Maximum area in square meters
+  # Floor filters - only up to 2nd floor, no minimum
+  max_floor: 2     # Maximum 2nd floor (ground=0, 1st=1, 2nd=2)
+  min_area: 30     # Minimum area in sqm
+  max_area: 300    # Maximum area in sqm (suitable for houses)
 
 # Advanced filters (optional)
 exclude_keywords:

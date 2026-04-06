@@ -62,10 +62,13 @@ class AloPropertyScraper:
         """Build search URLs for all configured locations and property types"""
         urls = []
 
-        # Property type URLs
+        # Property type URLs - ALL property categories
         property_types = {
             'apartments': "https://www.alo.bg/obiavi/imoti-prodajbi/apartamenti-stai/",
-            'houses': "https://www.alo.bg/obiavi/imoti-prodajbi/kashti-vili/"
+            'houses': "https://www.alo.bg/obiavi/imoti-prodajbi/kashti-vili/",
+            'commercial': "https://www.alo.bg/obiavi/imoti-prodajbi/magazini-ofisi/",
+            'land': "https://www.alo.bg/obiavi/imoti-prodajbi/parceli-za-zastroiavane-investicionni-proekti/",
+            'agricultural': "https://www.alo.bg/obiavi/imoti-prodajbi/zemedelska-zemia-gradini-lozia-gora/"
         }
 
         # Check which property types to search
@@ -238,16 +241,7 @@ class AloPropertyScraper:
                     logging.debug(f"Property excluded: missing required keywords {include_keywords}")
                     return False
 
-            # Check Kraimorie-specific keywords for Burgas properties
-            kraimorie_keywords = self.filters.get('kraimorie_keywords', [])
-            search_city = property_data.get('search_city', '')
-            if 'бургас' in search_city.lower() and kraimorie_keywords:
-                has_kraimorie = any(
-                    keyword.lower() in full_text for keyword in kraimorie_keywords
-                )
-                if not has_kraimorie:
-                    logging.debug("Burgas property excluded: not in Kraimorie")
-                    return False
+            # Removed Kraimorie keyword filtering - now using direct location ID
 
             # Check property type
             property_types = self.filters.get('property_type', [])
@@ -275,6 +269,35 @@ class AloPropertyScraper:
                 if excluded.lower() in lister:
                     logging.debug(f"Property excluded due to lister: {excluded}")
                     return False
+
+            # Check floor restrictions
+            max_floor = self.filters.get('features', {}).get('max_floor')
+            if max_floor is not None:
+                floor_text = property_data.get('floor', '')
+                import re
+                floor_match = re.search(r'(\d+)', floor_text)
+                if floor_match:
+                    floor_num = int(floor_match.group(1))
+                    if floor_num > max_floor:
+                        logging.debug(f"Property excluded: floor {floor_num} > max {max_floor}")
+                        return False
+
+            # Check area restrictions
+            features = self.filters.get('features', {})
+            min_area = features.get('min_area')
+            max_area = features.get('max_area')
+
+            if min_area is not None or max_area is not None:
+                area_text = property_data.get('area', '')
+                area_match = re.search(r'(\d+(?:\.\d+)?)', area_text)
+                if area_match:
+                    area_num = float(area_match.group(1))
+                    if min_area and area_num < min_area:
+                        logging.debug(f"Property excluded: area {area_num} < min {min_area}")
+                        return False
+                    if max_area and area_num > max_area:
+                        logging.debug(f"Property excluded: area {area_num} > max {max_area}")
+                        return False
 
             logging.debug("Property meets all criteria")
             return True
