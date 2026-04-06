@@ -34,6 +34,7 @@ def main():
     # Ensure directories exist
     os.makedirs('data', exist_ok=True)
     os.makedirs('docs', exist_ok=True)
+    os.makedirs('logs', exist_ok=True)  # Create logs directory
 
     # Initialize scraper components
     scraper = AloPropertyScraper('config/filters.yaml')
