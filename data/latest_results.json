@@ -1,9 +1,9 @@
 {
-  "timestamp": "2026-04-06T08:19:54.362192+00:00",
-  "error": "day is out of range for month",
+  "timestamp": "2026-04-06T08:45:07.880387+00:00",
   "new_properties": [],
   "stats": {
-    "total_properties_seen": 0,
-    "properties_today": 0
-  }
+    "total_properties_seen": 16,
+    "properties_today": 16
+  },
+  "total_properties_scanned": 72
 }
