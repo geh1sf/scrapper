@@ -47,10 +47,10 @@ def main():
             # Send email notifications
             logging.info("📧 Checking email notifications...")
             try:
-                from email_notifier import PropertyEmailNotifier
+                from gmail_notifier import GmailNotifier
                 from generate_simple_website import categorize_properties
 
-                notifier = PropertyEmailNotifier()
+                notifier = GmailNotifier()
 
                 # Categorize properties for email
                 new_properties = results.get('new_properties', [])

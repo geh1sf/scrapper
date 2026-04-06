@@ -1,0 +1,9 @@
+# Only repository owner can approve changes
+* @geh1sf
+
+# All files require your approval
+*.py @geh1sf
+*.md @geh1sf
+.github/workflows/* @geh1sf
+data/* @geh1sf
+docs/* @geh1sf
