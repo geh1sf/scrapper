@@ -2,8 +2,8 @@ name: Daily Kraimorie Property Tracker
 
 on:
   schedule:
-    # Run daily at 8:00 AM UTC (10:00 AM Bulgarian time)
-    - cron: '0 8 * * *'
+    # Run daily at 1:00 AM UTC (3:00 AM Bulgarian time)
+    - cron: '0 1 * * *'
 
   # Allow manual triggering
   workflow_dispatch:
