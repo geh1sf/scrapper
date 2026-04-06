@@ -24,37 +24,24 @@ def load_results():
 
     return latest, history
 
-def group_properties_by_type(properties: List[Dict]) -> Dict[str, List[Dict]]:
-    """Group properties by broker and type"""
+def group_properties_by_agency(properties: List[Dict]) -> Dict[str, List[Dict]]:
+    """Group properties by Argosdom vs all others"""
     grouped = {
-        'argosdom_houses': [],
-        'argosdom_apartments': [],
-        'other_houses': [],
-        'other_apartments': []
+        'argosdom_properties': [],
+        'other_properties': []
     }
 
     for prop in properties:
         lister = prop.get('lister', '').lower()
-        title = prop.get('title', '').lower()
-        search_city = prop.get('search_city', '').lower()
 
         # Check if it's from Argosdom
         is_argosdom = any(keyword in lister for keyword in ['argosdom', 'argos'])
 
-        # Check if it's a house or apartment
-        is_house = any(keyword in title or keyword in search_city for keyword in [
-            'къща', 'вила', 'house', 'villa', 'houses'
-        ])
-
-        # Categorize
-        if is_argosdom and is_house:
-            grouped['argosdom_houses'].append(prop)
-        elif is_argosdom:
-            grouped['argosdom_apartments'].append(prop)
-        elif is_house:
-            grouped['other_houses'].append(prop)
+        # Categorize by agency
+        if is_argosdom:
+            grouped['argosdom_properties'].append(prop)
         else:
-            grouped['other_apartments'].append(prop)
+            grouped['other_properties'].append(prop)
 
     return grouped
 
@@ -111,37 +98,25 @@ def generate_organized_properties(properties: List[Dict]) -> str:
     if not properties:
         return '<div class="no-properties">🏠 No new properties found in the latest scan.</div>'
 
-    grouped = group_properties_by_type(properties)
+    grouped = group_properties_by_agency(properties)
 
     html = ""
 
-    # Section 1: Argosdom Houses
-    html += generate_property_section(
-        "Argosdom Houses",
-        grouped['argosdom_houses'],
-        "🏡"
-    )
+    # Section 1: Argosdom Properties (Priority)
+    if grouped['argosdom_properties']:
+        html += generate_property_section(
+            "🏆 Argosdom Agency Properties",
+            grouped['argosdom_properties'],
+            "⭐"
+        )
 
-    # Section 2: Argosdom Apartments
-    html += generate_property_section(
-        "Argosdom Apartments",
-        grouped['argosdom_apartments'],
-        "🏢"
-    )
-
-    # Section 3: Other Houses
-    html += generate_property_section(
-        "Other Agency Houses",
-        grouped['other_houses'],
-        "🏠"
-    )
-
-    # Section 4: Other Apartments
-    html += generate_property_section(
-        "Other Agency Apartments",
-        grouped['other_apartments'],
-        "🏘️"
-    )
+    # Section 2: All Other Properties
+    if grouped['other_properties']:
+        html += generate_property_section(
+            "All Other Agency Properties",
+            grouped['other_properties'],
+            "🏠"
+        )
 
     return html
 
@@ -245,8 +220,8 @@ def generate_website():
 <body>
     <div class="container">
         <div class="header">
-            <h1>🏠 Sofia Property Scraper</h1>
-            <div class="subtitle">Automated apartment hunting in Sofia, Bulgaria</div>
+            <h1>🏖️ Kraimorie Property Scraper</h1>
+            <div class="subtitle">Automated property hunting in Kraimorie, Burgas - Argosdom Agency</div>
             <div class="subtitle">Last updated: {formatted_time}</div>
         </div>
 
@@ -279,7 +254,7 @@ def generate_website():
 
         <div class="footer">
             <p>🤖 Powered by GitHub Actions • 🔄 Updates daily at 8:00 AM UTC</p>
-            <p>🏠 Searching for apartments in Sofia, Bulgaria via alo.bg</p>
+            <p>🏖️ Searching for properties in Kraimorie, Burgas from Argosdom agency via alo.bg</p>
         </div>
     </div>
 </body>

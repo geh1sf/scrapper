@@ -49,10 +49,7 @@ include_keywords: []  # General keywords
   # - "паркинг"    # parking
   # - "тераса"     # terrace
 
-# Lister/Agent filters - ONLY Argosdom agency
-preferred_listers:
-  - "argosdom"      # Argosdom agency
-  - "argosdom.alo.bg"
-  - "Argosdom"
+# Lister/Agent filters - NO RESTRICTIONS (show all agencies)
+preferred_listers: []  # No restrictions - show all agencies
 
-excluded_listers: []  # No excluded agencies
+excluded_listers: []   # No excluded agencies

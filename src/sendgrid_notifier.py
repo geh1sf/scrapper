@@ -22,37 +22,24 @@ class SendGridNotifier:
             self.enabled = True
             logging.info("SendGrid notifier initialized successfully")
 
-    def group_properties_by_type(self, properties: List[Dict]) -> Dict[str, List[Dict]]:
-        """Group properties by broker and type for email"""
+    def group_properties_by_agency(self, properties: List[Dict]) -> Dict[str, List[Dict]]:
+        """Group properties by Argosdom vs all others for email"""
         grouped = {
-            'argosdom_houses': [],
-            'argosdom_apartments': [],
-            'other_houses': [],
-            'other_apartments': []
+            'argosdom_properties': [],
+            'other_properties': []
         }
 
         for prop in properties:
             lister = prop.get('lister', '').lower()
-            title = prop.get('title', '').lower()
-            search_city = prop.get('search_city', '').lower()
 
             # Check if it's from Argosdom
             is_argosdom = any(keyword in lister for keyword in ['argosdom', 'argos'])
 
-            # Check if it's a house or apartment
-            is_house = any(keyword in title or keyword in search_city for keyword in [
-                'къща', 'вила', 'house', 'villa', 'houses'
-            ])
-
-            # Categorize
-            if is_argosdom and is_house:
-                grouped['argosdom_houses'].append(prop)
-            elif is_argosdom:
-                grouped['argosdom_apartments'].append(prop)
-            elif is_house:
-                grouped['other_houses'].append(prop)
+            # Categorize by agency
+            if is_argosdom:
+                grouped['argosdom_properties'].append(prop)
             else:
-                grouped['other_apartments'].append(prop)
+                grouped['other_properties'].append(prop)
 
         return grouped
 
@@ -99,15 +86,13 @@ class SendGridNotifier:
                 </div>
         """
 
-        # Group properties by type
-        grouped = self.group_properties_by_type(properties)
+        # Group properties by agency
+        grouped = self.group_properties_by_agency(properties)
 
         # Generate sections
         sections = [
-            ("🏡 Argosdom Houses", grouped['argosdom_houses']),
-            ("🏢 Argosdom Apartments", grouped['argosdom_apartments']),
-            ("🏠 Other Agency Houses", grouped['other_houses']),
-            ("🏘️ Other Agency Apartments", grouped['other_apartments'])
+            ("⭐ Argosdom Agency Properties", grouped['argosdom_properties']),
+            ("🏠 All Other Agency Properties", grouped['other_properties'])
         ]
 
         for section_title, section_properties in sections:
