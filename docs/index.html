@@ -12,6 +12,18 @@
         .header h1 { margin: 0; color: #2c3e50; }
         .header .subtitle { color: #7f8c8d; margin: 10px 0; }
 
+        .navigation { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        .nav-container { display: flex; align-items: center; padding: 10px; gap: 10px; flex-wrap: wrap; }
+        .nav-item { padding: 10px 20px; border-radius: 6px; text-decoration: none; color: #666; background: #f8f9fa; }
+        .nav-item.active { background: #3498db; color: white; }
+
+        .dropdown { position: relative; }
+        .dropbtn { padding: 10px 20px; border: none; border-radius: 6px; background: #95a5a6; color: white; cursor: pointer; }
+        .dropdown-content { display: none; position: absolute; background: white; min-width: 200px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1; border-radius: 4px; max-height: 300px; overflow-y: auto; }
+        .dropdown-content a { color: #333; padding: 12px 16px; text-decoration: none; display: block; }
+        .dropdown-content a:hover { background: #f1f1f1; }
+        .dropdown:hover .dropdown-content { display: block; }
+
         .status { padding: 20px; border-radius: 8px; margin: 20px 0; font-weight: bold; text-align: center; }
         .status.success { background: #d4edda; color: #155724; }
         .status.no-results { background: #d1ecf1; color: #0c5460; }
@@ -50,7 +62,7 @@
         <div class="header">
             <h1>Kraimorie Daily Properties</h1>
             <div class="subtitle">Apartments and Houses in Kraimorie, Burgas</div>
-            <div class="subtitle">Last updated: 2026-04-06 11:12 UTC</div>
+            <div class="subtitle">Last updated: 2026-04-06 11:17 UTC</div>
         </div>
 
         <div class="status no-results">
@@ -76,8 +88,15 @@
             </div>
         </div>
 <div class="section"><h2 style="text-align: center; color: #666;">No new properties today</h2></div>
+        
+        <div class="navigation">
+            <div class="nav-container">
+                <a href="index.html" class="nav-item active">📅 Today's Properties</a>
+    </div></div>
+
         <div class="footer">
             <p>🔄 Updates daily at 23:57 UTC • Apartments and Houses only</p>
+            <p>📅 Previous days available in menu above</p>
             <p>🤖 Kraimorie Property Tracker</p>
         </div>
     </div>
