@@ -18,13 +18,13 @@ jobs:
 
     steps:
     - name: 🔄 Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         # Need full history to preserve previous results
         fetch-depth: 0
 
     - name: 🐍 Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.10'
 
@@ -35,9 +35,17 @@ jobs:
 
     - name: 🏠 Run property scraper
       run: |
+        echo "🔍 Checking files..."
+        ls -la
+        echo "🔍 Checking Python version..."
+        python --version
+        echo "🔍 Checking dependencies..."
+        pip list | grep -E "(requests|beautifulsoup|lxml)"
+        echo "🔍 Testing imports..."
+        python -c "import sys; sys.path.append('src'); from property_scraper import AloPropertyScraper; print('✅ Imports working')"
+        echo "🔍 Running scraper..."
         python github_scraper.py
       env:
-        # Add any environment variables if needed
         PYTHONPATH: src
 
     - name: 📊 Generate website
