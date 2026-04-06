@@ -448,7 +448,7 @@ def generate_website():
         {generate_property_sections(new_properties, argosdom_properties)}
 
         <div class="footer">
-            <p>🔄 Updates automatically every day at 1:00 AM UTC • Today's new properties only</p>
+            <p>🔄 Updates automatically every day at 23:57 UTC • Today's new properties only</p>
             <p>📅 Previous days available in the menu above</p>
             <p>🤖 Powered by GitHub Actions</p>
         </div>
