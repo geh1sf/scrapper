@@ -58,37 +58,53 @@ class AloPropertyScraper:
             ]
         )
 
-    def build_search_url(self) -> str:
-        """Build search URL with filters"""
-        base_url = "https://www.alo.bg/obiavi/imoti-prodajbi/apartamenti-stai/"
+    def build_search_urls(self) -> List[str]:
+        """Build search URLs for all configured locations and property types"""
+        urls = []
 
-        params = {}
-
-        # Location mapping - major Bulgarian cities with region_id and location_ids
-        location_map = {
-            "софия": {"region_id": 22, "location_ids": 4342},  # Sofia city
-            "пловдив": {"region_id": 15, "location_ids": None},  # Plovdiv (need to find location_ids)
-            "варна": {"region_id": 3, "location_ids": None},   # Varna (need to find location_ids)
-            "бургас": {"region_id": 2, "location_ids": None},   # Burgas (need to find location_ids)
+        # Property type URLs
+        property_types = {
+            'apartments': "https://www.alo.bg/obiavi/imoti-prodajbi/apartamenti-stai/",
+            'houses': "https://www.alo.bg/obiavi/imoti-prodajbi/kashti-vili/"
         }
 
-        # Get location from filters
-        location = self.filters.get('location', {}).get('city', "").lower()
-        if location in location_map:
-            params['region_id'] = location_map[location]['region_id']
-            if location_map[location]['location_ids']:
-                params['location_ids'] = location_map[location]['location_ids']
-        else:
-            # Default to Sofia if no location specified
-            params['region_id'] = 22
-            params['location_ids'] = 4342
+        # Check which property types to search
+        search_types = self.filters.get('search_property_types', ['apartments'])  # Default to apartments only
 
-        # Build URL with parameters
-        if params:
-            query_string = urlencode(params)
-            return f"{base_url}?{query_string}"
-        else:
-            return base_url
+        # Get locations from new multi-location config
+        locations = self.filters.get('locations', [])
+
+        if not locations:
+            # Fallback to old single location config
+            old_location = self.filters.get('location', {})
+            if old_location:
+                locations = [{
+                    'city': old_location.get('city', 'София'),
+                    'region_id': 22,
+                    'location_ids': 4342
+                }]
+
+        # Build URLs for each property type and location combination
+        for prop_type in search_types:
+            if prop_type not in property_types:
+                continue
+
+            base_url = property_types[prop_type]
+
+            for location in locations:
+                params = {
+                    'region_id': location['region_id']
+                }
+
+                if location.get('location_ids'):
+                    params['location_ids'] = location['location_ids']
+
+                query_string = urlencode(params)
+                url = f"{base_url}?{query_string}"
+                search_label = f"{location['city']} - {prop_type}"
+                urls.append((url, search_label))
+
+        return urls if urls else [("https://www.alo.bg/obiavi/imoti-prodajbi/apartamenti-stai/?region_id=22&location_ids=4342", "София - apartments")]
 
     def fetch_page(self, url: str, max_retries: int = 3) -> BeautifulSoup:
         """Fetch a page and return parsed HTML with retry logic"""
@@ -136,7 +152,8 @@ class AloPropertyScraper:
             'location': '',
             'area': '',
             'floor': '',
-            'url': ''
+            'url': '',
+            'lister': ''
         }
 
         try:
@@ -163,9 +180,21 @@ class AloPropertyScraper:
                     property_data['price'] = text
                     break
 
+            # Extract lister/agent from publisher section
+            publisher_elem = property_element.find('div', class_='listtop-publisher')
+            if publisher_elem:
+                publisher_text = publisher_elem.get_text(strip=True)
+                # Clean up the publisher name
+                import re
+                publisher_lines = publisher_text.split('\n')
+                for line in publisher_lines:
+                    line = line.strip()
+                    if line and not re.match(r'^\d+\s*(ден|час|минут)', line):  # Skip time info
+                        property_data['lister'] = line
+                        break
+
             # Extract area and other details from the full text
             full_text = property_element.get_text()
-            import re
 
             # Extract area
             area_pattern = r'(\d+(?:\.\d+)?)\s*кв\.?м'
@@ -188,11 +217,14 @@ class AloPropertyScraper:
         """Check if property meets the specified criteria"""
         try:
             title = property_data.get('title', '').lower()
+            location = property_data.get('location', '').lower()
+            full_text = f"{title} {location}".lower()
+            lister = property_data.get('lister', '').lower()
 
             # Check exclude keywords
             exclude_keywords = self.filters.get('exclude_keywords', [])
             for keyword in exclude_keywords:
-                if keyword.lower() in title:
+                if keyword.lower() in full_text:
                     logging.debug(f"Property excluded due to keyword: {keyword}")
                     return False
 
@@ -200,10 +232,21 @@ class AloPropertyScraper:
             include_keywords = self.filters.get('include_keywords', [])
             if include_keywords:
                 has_required_keyword = any(
-                    keyword.lower() in title for keyword in include_keywords
+                    keyword.lower() in full_text for keyword in include_keywords
                 )
                 if not has_required_keyword:
                     logging.debug(f"Property excluded: missing required keywords {include_keywords}")
+                    return False
+
+            # Check Kraimorie-specific keywords for Burgas properties
+            kraimorie_keywords = self.filters.get('kraimorie_keywords', [])
+            search_city = property_data.get('search_city', '')
+            if 'бургас' in search_city.lower() and kraimorie_keywords:
+                has_kraimorie = any(
+                    keyword.lower() in full_text for keyword in kraimorie_keywords
+                )
+                if not has_kraimorie:
+                    logging.debug("Burgas property excluded: not in Kraimorie")
                     return False
 
             # Check property type
@@ -216,6 +259,23 @@ class AloPropertyScraper:
                     logging.debug(f"Property excluded: type not in {property_types}")
                     return False
 
+            # Check preferred listers
+            preferred_listers = self.filters.get('preferred_listers', [])
+            if preferred_listers:
+                has_preferred_lister = any(
+                    preferred.lower() in lister for preferred in preferred_listers
+                )
+                if not has_preferred_lister:
+                    logging.debug(f"Property excluded: lister not in preferred list")
+                    return False
+
+            # Check excluded listers
+            excluded_listers = self.filters.get('excluded_listers', [])
+            for excluded in excluded_listers:
+                if excluded.lower() in lister:
+                    logging.debug(f"Property excluded due to lister: {excluded}")
+                    return False
+
             logging.debug("Property meets all criteria")
             return True
 
@@ -224,71 +284,90 @@ class AloPropertyScraper:
             return True
 
     def scrape_properties(self, max_pages: int = 3) -> List[Dict[str, str]]:
-        """Main scraping method with pagination support"""
-        logging.info("Starting property scraping...")
-        properties = []
+        """Main scraping method with multi-location and pagination support"""
+        logging.info("Starting multi-location property scraping...")
+        all_properties = []
 
-        for page_num in range(1, max_pages + 1):
-            # Build URL for current page
-            search_url = self.build_search_url()
-            if page_num > 1:
-                # Add page parameter
-                separator = '&' if '?' in search_url else '?'
-                search_url += f"{separator}p={page_num}"
+        # Get all search URLs for different locations
+        search_urls = self.build_search_urls()
 
-            logging.info(f"Searching page {page_num}: {search_url}")
+        for url_info in search_urls:
+            search_url, city_name = url_info
+            logging.info(f"🏙️ Searching in {city_name}...")
 
-            soup = self.fetch_page(search_url)
-            if not soup:
-                logging.error(f"Failed to fetch page {page_num}")
-                break
+            city_properties = []
 
-            # Save first page for analysis
-            if page_num == 1:
-                with open('logs/sample_page.html', 'w', encoding='utf-8') as f:
-                    f.write(str(soup.prettify()))
-                logging.info("Saved sample page for analysis")
+            for page_num in range(1, max_pages + 1):
+                # Add page parameter for pagination
+                current_url = search_url
+                if page_num > 1:
+                    separator = '&' if '?' in search_url else '?'
+                    current_url += f"{separator}p={page_num}"
 
-                # Debug: Print page title
-                title = soup.find('title')
-                logging.info(f"Page title: {title.get_text() if title else 'No title'}")
+                logging.info(f"Searching {city_name} page {page_num}: {current_url}")
 
-            # Look for property listings
-            property_elements = soup.find_all('div', class_='listtop-item')
+                soup = self.fetch_page(current_url)
+                if not soup:
+                    logging.error(f"Failed to fetch {city_name} page {page_num}")
+                    break
 
-            if not property_elements:
-                property_elements = soup.find_all('div', {'class': lambda x: x and 'listtop-item' in x})
+                # Save first page for analysis
+                if page_num == 1 and city_name == search_urls[0][1]:  # First city, first page
+                    with open('logs/sample_page.html', 'w', encoding='utf-8') as f:
+                        f.write(str(soup.prettify()))
+                    logging.info("Saved sample page for analysis")
 
-            if not property_elements:
-                logging.info(f"No properties found on page {page_num}, stopping pagination")
-                break
+                    # Debug: Print page title
+                    title = soup.find('title')
+                    logging.info(f"Page title: {title.get_text() if title else 'No title'}")
 
-            logging.info(f"Found {len(property_elements)} property elements on page {page_num}")
+                # Look for property listings
+                property_elements = soup.find_all('div', class_='listtop-item')
 
-            page_properties = 0
-            limit_per_page = 10 if page_num == 1 else 20  # First page: 10 for debugging, others: 20
+                if not property_elements:
+                    property_elements = soup.find_all('div', {'class': lambda x: x and 'listtop-item' in x})
 
-            for i, element in enumerate(property_elements[:limit_per_page]):
-                property_data = self.extract_property_info(element)
+                if not property_elements:
+                    logging.info(f"No properties found on {city_name} page {page_num}, stopping pagination for this city")
+                    break
 
-                # Debug for first page only
-                if page_num == 1 and i < 3:
-                    logging.info(f"Page {page_num}, Property {i+1} extracted data:")
-                    for key, value in property_data.items():
-                        logging.info(f"  {key}: '{value}'")
-                    logging.info(f"  meets_criteria: {self.meets_criteria(property_data)}")
-                    logging.info(f"  has_url: {bool(property_data['url'])}")
-                    logging.info("---")
+                logging.info(f"Found {len(property_elements)} property elements on {city_name} page {page_num}")
 
-                if property_data['url'] and self.meets_criteria(property_data):
-                    properties.append(property_data)
-                    page_properties += 1
+                page_properties = 0
+                limit_per_page = 10 if page_num == 1 else 20
 
-            logging.info(f"Found {page_properties} matching properties on page {page_num}")
+                for i, element in enumerate(property_elements[:limit_per_page]):
+                    property_data = self.extract_property_info(element)
 
-            # Add small delay between pages to be respectful
-            if page_num < max_pages:
-                time.sleep(2)
+                    # Add city information to property data
+                    property_data['search_city'] = city_name
 
-        logging.info(f"Total: Found {len(properties)} matching properties across {min(page_num, max_pages)} pages")
-        return properties
+                    # Debug for first page of first city only
+                    if page_num == 1 and city_name == search_urls[0][1] and i < 3:
+                        logging.info(f"{city_name} page {page_num}, Property {i+1} extracted data:")
+                        for key, value in property_data.items():
+                            logging.info(f"  {key}: '{value}'")
+                        logging.info(f"  meets_criteria: {self.meets_criteria(property_data)}")
+                        logging.info(f"  has_url: {bool(property_data['url'])}")
+                        logging.info("---")
+
+                    if property_data['url'] and self.meets_criteria(property_data):
+                        city_properties.append(property_data)
+                        page_properties += 1
+
+                logging.info(f"Found {page_properties} matching properties on {city_name} page {page_num}")
+
+                # Add small delay between pages
+                if page_num < max_pages:
+                    time.sleep(2)
+
+            logging.info(f"🏙️ {city_name} total: {len(city_properties)} matching properties")
+            all_properties.extend(city_properties)
+
+            # Delay between cities
+            if city_name != search_urls[-1][1]:  # Not the last city
+                logging.info("⏸️ Pausing between cities...")
+                time.sleep(3)
+
+        logging.info(f"🎯 Grand total: Found {len(all_properties)} matching properties across all locations")
+        return all_properties

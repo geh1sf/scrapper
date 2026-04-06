@@ -1,14 +1,32 @@
 # Property Search Filters Configuration
 # Edit these values to change your search criteria
 
-location:
-  city: "София"  # Sofia, or any other city
-  region: ""     # Optional: specific region/district
+locations:
+  - city: "София"    # Sofia
+    region_id: 22
+    location_ids: 4342
+  - city: "Бургас"   # Burgas (all areas including Kraimorie)
+    region_id: 2
+    location_ids: null  # Will search all Burgas region
+  # Add more cities here as needed
+
+# Kraimorie-specific filters
+kraimorie_keywords:
+  - "крайморие"
+  - "kraimorie"
+  - "краймориe"
+
+# Property types to search
+search_property_types:
+  - "apartments"  # Apartments/rooms
+  - "houses"      # Houses/villas
 
 property_type:
   - "Тристаен"    # 3-room apartment
   - "Двустаен"    # 2-room apartment
   - "Четиристаен" # 4-room apartment
+  - "къща"        # house
+  - "вила"        # villa
 
 price_range:
   min: 100000  # Minimum price in BGN
@@ -25,6 +43,16 @@ exclude_keywords:
   - "гараж"      # garage
   - "мазе"       # basement
 
-include_keywords: []  # Temporarily disabled
+include_keywords: []  # General keywords
   # - "паркинг"    # parking
   # - "тераса"     # terrace
+
+# Lister/Agent filters
+preferred_listers:
+  []  # Add agent/company names you prefer
+  # - "Agency Name"
+  # - "Agent Name"
+
+excluded_listers:
+  []  # Add agent/company names to avoid
+  # - "Unwanted Agency"
