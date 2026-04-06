@@ -267,14 +267,28 @@ class KraimorieTracker:
                 listings = soup.find_all('div', class_='listtop-item') + soup.find_all('div', class_='listvip-item')
 
                 logging.info(f"Found {len(listings)} listings on Argosdom page")
+                logging.info("="*50)
+                logging.info("DEBUGGING ALL ARGOSDOM PROPERTIES:")
+                logging.info("="*50)
 
                 for listing in listings:
                     prop = self.extract_simple_property(listing)
                     prop['is_argosdom'] = True  # Force this since it's from their page
                     prop['source'] = 'argosdom_page'
 
-                    # Check if it's Kraimorie-related
-                    if 'крайморие' in prop['title'].lower() or 'крайморие' in prop['location'].lower():
+                    # Check if it's Kraimorie-related (multiple spelling variations)
+                    kraimorie_keywords = ['крайморие', 'kraimorie', 'крайморие,', 'крайморие.']
+                    full_text = f"{prop['title']} {prop['location']}".lower()
+                    is_kraimorie = any(keyword in full_text for keyword in kraimorie_keywords)
+
+                    # Debug Argosdom property
+                    logging.info(f"ARGOSDOM PROPERTY CHECK:")
+                    logging.info(f"  Title: '{prop['title']}'")
+                    logging.info(f"  Location: '{prop['location']}'")
+                    logging.info(f"  Full text: '{full_text}'")
+                    logging.info(f"  Is Kraimorie: {is_kraimorie}")
+
+                    if is_kraimorie:
                         if prop['property_id'] not in [p['property_id'] for p in all_current_properties]:
                             all_current_properties.append(prop)
                             argosdom_properties.append(prop)
