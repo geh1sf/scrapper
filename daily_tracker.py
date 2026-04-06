@@ -46,7 +46,8 @@ def main():
 
             # Generate website
             logging.info("🌐 Generating website...")
-            exec(open('generate_daily_website.py').read())
+            import subprocess
+            subprocess.run(['python', 'generate_daily_website.py'], check=True)
 
             logging.info("✅ Daily tracking completed successfully!")
 
@@ -68,7 +69,8 @@ def main():
                 json.dump(error_results, f, ensure_ascii=False, indent=2)
 
             # Generate website anyway
-            exec(open('generate_daily_website.py').read())
+            import subprocess
+            subprocess.run(['python', 'generate_daily_website.py'], check=False)
 
             sys.exit(1)
 
@@ -90,7 +92,8 @@ def main():
             json.dump(error_results, f, ensure_ascii=False, indent=2)
 
         # Generate website anyway
-        exec(open('generate_daily_website.py').read())
+        import subprocess
+        subprocess.run(['python', 'generate_daily_website.py'], check=False)
 
         sys.exit(1)
 

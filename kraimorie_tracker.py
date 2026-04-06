@@ -9,7 +9,7 @@ import sys
 import json
 import time
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 # Add src directory to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
@@ -61,20 +61,42 @@ class KraimorieTracker:
         self.seen_properties = self.load_seen_properties()
 
     def load_seen_properties(self):
-        """Load previously seen properties"""
+        """Load previously seen properties and clean up old ones"""
+        seen_properties = set()
+        seen_with_dates = {}
+
         try:
             if os.path.exists(self.seen_properties_file):
                 with open(self.seen_properties_file, 'r', encoding='utf-8') as f:
-                    return set(json.load(f))
+                    data = json.load(f)
+
+                # Handle both old format (list) and new format (dict with dates)
+                if isinstance(data, list):
+                    # Old format - convert to new format with current date
+                    current_date = datetime.now(timezone.utc).isoformat()[:10]
+                    for prop_id in data:
+                        seen_with_dates[prop_id] = current_date
+                        seen_properties.add(prop_id)
+                else:
+                    # New format with dates
+                    cutoff_date = (datetime.now(timezone.utc) - timedelta(days=60)).isoformat()[:10]
+                    for prop_id, date_seen in data.items():
+                        if date_seen >= cutoff_date:  # Keep properties seen in last 60 days
+                            seen_with_dates[prop_id] = date_seen
+                            seen_properties.add(prop_id)
+
         except:
             pass
-        return set()
+
+        # Save cleaned data
+        self.seen_with_dates = seen_with_dates
+        return seen_properties
 
     def save_seen_properties(self):
-        """Save seen properties"""
+        """Save seen properties with dates"""
         os.makedirs('data', exist_ok=True)
         with open(self.seen_properties_file, 'w', encoding='utf-8') as f:
-            json.dump(list(self.seen_properties), f, ensure_ascii=False, indent=2)
+            json.dump(self.seen_with_dates, f, ensure_ascii=False, indent=2)
 
     def extract_simple_property(self, element):
         """Extract basic property info from listing element"""
@@ -185,6 +207,9 @@ class KraimorieTracker:
                             if prop['property_id'] not in self.seen_properties:
                                 new_properties.append(prop)
                                 self.seen_properties.add(prop['property_id'])
+                                # Record when we first saw this property
+                                current_date = datetime.now(timezone.utc).isoformat()[:10]
+                                self.seen_with_dates[prop['property_id']] = current_date
                                 logging.info(f"NEW: {prop['title'][:50]}...")
 
                             # Track Argosdom separately
@@ -221,6 +246,9 @@ class KraimorieTracker:
                             if prop['property_id'] not in self.seen_properties:
                                 new_properties.append(prop)
                                 self.seen_properties.add(prop['property_id'])
+                                # Record when we first saw this property
+                                current_date = datetime.now(timezone.utc).isoformat()[:10]
+                                self.seen_with_dates[prop['property_id']] = current_date
                                 logging.info(f"NEW ARGOSDOM: {prop['title'][:50]}...")
 
             except Exception as e:
@@ -248,6 +276,9 @@ class KraimorieTracker:
             with open(self.results_file, 'w', encoding='utf-8') as f:
                 json.dump(results, f, ensure_ascii=False, indent=2)
 
+            # Also maintain a history file with cleanup
+            self.update_history(results)
+
             # Print summary
             logging.info("=" * 60)
             logging.info("KRAIMORIE DAILY SUMMARY")
@@ -255,7 +286,7 @@ class KraimorieTracker:
             logging.info(f"Total current properties: {results['total_current_properties']}")
             logging.info(f"NEW properties today: {results['new_properties_today']}")
             logging.info(f"Argosdom properties: {results['argosdom_properties']}")
-            logging.info(f"Breakdown: {results['apartments']} apartments, {results['houses']} houses, {results['commercial']} commercial, {results['land']} land")
+            logging.info(f"Breakdown: {results['summary']['apartments']} apartments, {results['summary']['houses']} houses, {results['summary']['commercial']} commercial, {results['summary']['land']} land")
 
             if new_properties:
                 logging.info("\nNEW PROPERTIES TODAY:")
@@ -281,6 +312,40 @@ class KraimorieTracker:
         except ImportError:
             logging.error("Required packages not available. Install beautifulsoup4 and requests.")
             return None
+
+    def update_history(self, current_results):
+        """Update and clean up daily history"""
+        history_file = 'data/daily_history.json'
+
+        try:
+            if os.path.exists(history_file):
+                with open(history_file, 'r', encoding='utf-8') as f:
+                    history = json.load(f)
+            else:
+                history = []
+        except:
+            history = []
+
+        # Add today's summary
+        today = datetime.now(timezone.utc).isoformat()[:10]
+        history.append({
+            'date': today,
+            'timestamp': current_results['timestamp'],
+            'total_current': current_results['total_current_properties'],
+            'new_today': current_results['new_properties_today'],
+            'argosdom_count': current_results['argosdom_properties'],
+            'summary': current_results['summary']
+        })
+
+        # Keep only last 30 days
+        cutoff_date = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()[:10]
+        history = [h for h in history if h['date'] >= cutoff_date]
+
+        # Save cleaned history
+        with open(history_file, 'w', encoding='utf-8') as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+
+        logging.info(f"History updated: keeping {len(history)} days of data")
 
 def main():
     setup_logging()
