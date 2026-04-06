@@ -159,12 +159,13 @@ class AloPropertyScraper:
             'area': '',
             'floor': '',
             'url': '',
-            'lister': ''
+            'lister': '',
+            'image_url': ''
         }
 
         try:
-            # Extract title from h3.listtop-item-title
-            title_elem = property_element.find('h3', class_='listtop-item-title')
+            # Extract title from h3 - handle both regular and VIP listings
+            title_elem = property_element.find('h3', class_='listtop-item-title') or property_element.find('h3', class_='listvip-item-title')
             if title_elem:
                 property_data['title'] = title_elem.get_text(strip=True)
 
@@ -173,12 +174,20 @@ class AloPropertyScraper:
             if title_link:
                 property_data['url'] = urljoin(self.base_url, title_link['href'])
 
-            # Extract location from listtop-item-address
-            address_elem = property_element.find('div', class_='listtop-item-address')
+            # Extract image URL - handle both regular and VIP listings
+            img_element = property_element.find('img', class_='listvip-image-img') or property_element.find('img')
+            if img_element:
+                img_src = img_element.get('src') or img_element.get('data-src')
+                if img_src and not img_src.endswith('vip.svg'):  # Skip VIP badge images
+                    # Convert relative URLs to absolute URLs
+                    property_data['image_url'] = urljoin(self.base_url, img_src)
+
+            # Extract location - handle both regular and VIP listings
+            address_elem = property_element.find('div', class_='listtop-item-address') or property_element.find('div', class_='listvip-item-address')
             if address_elem:
                 property_data['location'] = address_elem.get_text(strip=True)
 
-            # Extract price from the price section
+            # Extract price - handle both formats
             price_spans = property_element.find_all('span', style=lambda value: value and 'white-space: nowrap' in value)
             for span in price_spans:
                 text = span.get_text(strip=True)
@@ -186,8 +195,20 @@ class AloPropertyScraper:
                     property_data['price'] = text
                     break
 
-            # Extract lister/agent from publisher section
-            publisher_elem = property_element.find('div', class_='listtop-publisher')
+            # If no price found in spans, try VIP format
+            if not property_data['price']:
+                price_elem = property_element.find('span', class_='first_pclass_vip')
+                if price_elem:
+                    # Look for € price in nested spans
+                    price_spans = price_elem.find_all('span', style=lambda value: value and 'white-space: nowrap' in value)
+                    for span in price_spans:
+                        text = span.get_text(strip=True)
+                        if '€' in text and any(c.isdigit() for c in text):
+                            property_data['price'] = text
+                            break
+
+            # Extract lister/agent from publisher section - handle both formats
+            publisher_elem = property_element.find('div', class_='listtop-publisher') or property_element.find('div', class_='listvip-publisher')
             if publisher_elem:
                 publisher_text = publisher_elem.get_text(strip=True)
 
@@ -210,30 +231,49 @@ class AloPropertyScraper:
                             break
                     property_data['is_argosdom'] = False
 
-            # Extract area and other details from the full text
-            full_text = property_element.get_text()
+            # Extract area - try VIP format first (from ads-params-multi)
+            area_elem = property_element.find('span', {'title': 'Квадратура'})
+            if area_elem:
+                area_text = area_elem.get_text(strip=True)
+                area_match = re.search(r'(\d+(?:\.\d+)?)\s*кв\.?м', area_text)
+                if area_match:
+                    property_data['area'] = f"{area_match.group(1)} кв.м"
 
-            # Extract area
-            area_pattern = r'(\d+(?:\.\d+)?)\s*кв\.?м'
-            area_match = re.search(area_pattern, full_text, re.IGNORECASE)
-            if area_match:
-                property_data['area'] = f"{area_match.group(1)} кв.м"
+            # If not found, extract from full text (regular listings)
+            if not property_data['area']:
+                full_text = property_element.get_text()
+                area_pattern = r'(\d+(?:\.\d+)?)\s*кв\.?м'
+                area_match = re.search(area_pattern, full_text, re.IGNORECASE)
+                if area_match:
+                    property_data['area'] = f"{area_match.group(1)} кв.м"
 
-            # Extract floor - be more specific to avoid false matches
-            floor_patterns = [
-                r'(\d+)\s*-?(?:ти|ри|ви)?\s*етаж',  # "5-ти етаж", "2 етаж"
-                r'ет\.?\s*(\d+)',                    # "ет. 3", "ет.2"
-                r'(\d+)\s*ет\.?(?:\s|$)',           # "3 ет.", "2 ет "
-            ]
-
-            for pattern in floor_patterns:
-                floor_match = re.search(pattern, full_text, re.IGNORECASE)
+            # Extract floor - try VIP format first (from ads-params-multi)
+            floor_elem = property_element.find('span', {'title': 'Номер на етажа'})
+            if floor_elem:
+                floor_text = floor_elem.get_text(strip=True)
+                floor_match = re.search(r'(\d+)', floor_text)
                 if floor_match:
                     floor_num = floor_match.group(1)
-                    # Validate it's a reasonable floor number
                     if int(floor_num) <= 20:  # Sanity check
                         property_data['floor'] = f"{floor_num} ет"
-                        break
+
+            # If not found, extract from full text (regular listings)
+            if not property_data['floor']:
+                full_text = property_element.get_text()
+                floor_patterns = [
+                    r'(\d+)\s*-?(?:ти|ри|ви)?\s*етаж',  # "5-ти етаж", "2 етаж"
+                    r'ет\.?\s*(\d+)',                    # "ет. 3", "ет.2"
+                    r'(\d+)\s*ет\.?(?:\s|$)',           # "3 ет.", "2 ет "
+                ]
+
+                for pattern in floor_patterns:
+                    floor_match = re.search(pattern, full_text, re.IGNORECASE)
+                    if floor_match:
+                        floor_num = floor_match.group(1)
+                        # Validate it's a reasonable floor number
+                        if int(floor_num) <= 20:  # Sanity check
+                            property_data['floor'] = f"{floor_num} ет"
+                            break
 
         except Exception as e:
             logging.error(f"Error extracting property info: {e}")
@@ -320,13 +360,18 @@ class AloPropertyScraper:
 
             if min_area is not None or max_area is not None:
                 area_text = property_data.get('area', '')
+                import re
                 area_match = re.search(r'(\d+(?:\.\d+)?)', area_text)
                 if area_match:
                     area_num = float(area_match.group(1))
                     if min_area and area_num < min_area:
+                        if debug_this:
+                            logging.info(f"  ❌ EXCLUDED: Area {area_num} < min {min_area}")
                         logging.debug(f"Property excluded: area {area_num} < min {min_area}")
                         return False
                     if max_area and area_num > max_area:
+                        if debug_this:
+                            logging.info(f"  ❌ EXCLUDED: Area {area_num} > max {max_area}")
                         logging.debug(f"Property excluded: area {area_num} > max {max_area}")
                         return False
 
@@ -375,11 +420,16 @@ class AloPropertyScraper:
                     title = soup.find('title')
                     logging.info(f"Page title: {title.get_text() if title else 'No title'}")
 
-                # Look for property listings
+                # Look for property listings - both regular and VIP listings
                 property_elements = soup.find_all('div', class_='listtop-item')
+                vip_elements = soup.find_all('div', class_='listvip-item')
+
+                # Combine both types
+                property_elements.extend(vip_elements)
 
                 if not property_elements:
-                    property_elements = soup.find_all('div', {'class': lambda x: x and 'listtop-item' in x})
+                    # Fallback search
+                    property_elements = soup.find_all('div', {'class': lambda x: x and ('listtop-item' in x or 'listvip-item' in x)})
 
                 if not property_elements:
                     logging.info(f"No properties found on {city_name} page {page_num}, stopping pagination for this city")
@@ -401,6 +451,17 @@ class AloPropertyScraper:
                         logging.info(f"{city_name} page {page_num}, Property {i+1} extracted data:")
                         for key, value in property_data.items():
                             logging.info(f"  {key}: '{value}'")
+
+                        # Debug the agency link detection
+                        agency_links = element.find_all('a', href=True)
+                        logging.info(f"  Found {len(agency_links)} links in property:")
+                        for link in agency_links[:5]:  # Show first 5 links
+                            href = link.get('href', '')
+                            text = link.get_text(strip=True)
+                            logging.info(f"    Link: '{href}' -> '{text}'")
+                            if '/users/' in href:
+                                logging.info(f"      -> USER LINK DETECTED!")
+
                         logging.info(f"  Current URL being scraped: {current_url}")
                         logging.info(f"  meets_criteria: {self.meets_criteria(property_data)}")
                         logging.info(f"  has_url: {bool(property_data['url'])}")
