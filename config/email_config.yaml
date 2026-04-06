@@ -1,0 +1,13 @@
+# Email Configuration
+email:
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+  sender_email: "hgen09@gmail.com"  # Replace with your Gmail address
+  sender_password: ""  # Use App Password, not regular password
+  recipient_email: "hgen09@gmail.com"  # Replace with recipient email
+
+# Email content settings
+notification:
+  subject_prefix: "[Property Alert]"
+  max_listings_per_email: 20
+  include_property_details: true
