@@ -44,6 +44,33 @@ def main():
             logging.info(f"📊 Total {results['total_current_properties']} properties available")
             logging.info(f"📊 {results['argosdom_properties']} Argosdom properties")
 
+            # Send email notifications
+            logging.info("📧 Checking email notifications...")
+            try:
+                from email_notifier import PropertyEmailNotifier
+                from generate_simple_website import categorize_properties
+
+                notifier = PropertyEmailNotifier()
+
+                # Categorize properties for email
+                new_properties = results.get('new_properties', [])
+                argosdom_properties = results.get('all_argosdom_properties', [])
+
+                new_apartments, new_houses = categorize_properties(new_properties)
+                argosdom_apartments, argosdom_houses = categorize_properties(argosdom_properties)
+
+                email_sent = notifier.send_notification(
+                    new_apartments, new_houses,
+                    argosdom_apartments, argosdom_houses,
+                    results.get('timestamp', '')
+                )
+
+                if email_sent and notifier.enabled:
+                    logging.info("📧 Email notification sent successfully")
+
+            except Exception as e:
+                logging.error(f"📧 Email notification failed: {e}")
+
             # Generate website
             logging.info("🌐 Generating website...")
             import subprocess
