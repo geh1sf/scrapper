@@ -47,7 +47,7 @@ def main():
             # Generate website
             logging.info("🌐 Generating website...")
             import subprocess
-            subprocess.run(['python', 'generate_daily_website.py'], check=True)
+            subprocess.run(['python', 'generate_simple_website.py'], check=True)
 
             logging.info("✅ Daily tracking completed successfully!")
 
@@ -70,7 +70,7 @@ def main():
 
             # Generate website anyway
             import subprocess
-            subprocess.run(['python', 'generate_daily_website.py'], check=False)
+            subprocess.run(['python', 'generate_simple_website.py'], check=False)
 
             sys.exit(1)
 
@@ -93,7 +93,7 @@ def main():
 
         # Generate website anyway
         import subprocess
-        subprocess.run(['python', 'generate_daily_website.py'], check=False)
+        subprocess.run(['python', 'generate_simple_website.py'], check=False)
 
         sys.exit(1)
 
