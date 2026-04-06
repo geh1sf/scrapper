@@ -1,6 +1,6 @@
 {
-  "timestamp": "2026-04-06T11:00:50.339853+00:00",
-  "total_current_properties": 90,
+  "timestamp": "2026-04-06T11:12:55.901293+00:00",
+  "total_current_properties": 60,
   "new_properties_today": 0,
   "argosdom_properties": 0,
   "new_properties": [],
@@ -9,6 +9,6 @@
     "apartments": 0,
     "houses": 27,
     "commercial": 0,
-    "land": 12
+    "land": 0
   }
 }
