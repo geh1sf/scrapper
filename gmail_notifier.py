@@ -33,11 +33,8 @@ class GmailNotifier:
         if not self.enabled:
             return False
 
-        # Send email if there are ANY new properties OR any Argosdom properties
-        total_new = len(new_apartments) + len(new_houses)
-        total_argosdom = len(argosdom_apartments) + len(argosdom_houses)
-
-        return total_new > 0 or total_argosdom > 0
+        # Send email on every run to provide daily status updates
+        return True
 
     def generate_email_html(self, new_apartments, new_houses, argosdom_apartments, argosdom_houses, timestamp):
         """Generate HTML email content"""
@@ -86,25 +83,47 @@ class GmailNotifier:
         </div>
 
         <div class="summary">
-            <strong>📊 {formatted_time}</strong><br>
-            🏠 <strong>{total_new} new properties</strong> • ⭐ <strong>{total_argosdom} Argosdom properties</strong>
+            <strong>📊 {formatted_time}</strong><br>"""
+
+        # Create status message based on findings
+        if total_new > 0 or total_argosdom > 0:
+            html += f"            🏠 <strong>{total_new} new properties</strong> • ⭐ <strong>{total_argosdom} Argosdom properties</strong>"
+        else:
+            html += "            🔍 <strong>No new properties today</strong> • ✅ <strong>System monitoring active</strong>"
+
+        html += """
         </div>
 """
 
-        # Add new apartments section
+        # Add property sections or status message
         if new_apartments:
             html += self.generate_property_section("🏠 NEW APARTMENTS TODAY", new_apartments)
 
-        # Add new houses section
         if new_houses:
             html += self.generate_property_section("🏡 NEW HOUSES TODAY", new_houses)
 
-        # Add Argosdom sections
         if argosdom_apartments:
             html += self.generate_property_section("⭐ ARGOSDOM APARTMENTS", argosdom_apartments)
 
         if argosdom_houses:
             html += self.generate_property_section("⭐ ARGOSDOM HOUSES", argosdom_houses)
+
+        # Add status section when no properties found
+        if total_new == 0 and total_argosdom == 0:
+            html += """
+        <div class="section">
+            <h2>📊 Daily Monitoring Status</h2>
+            <div class="property">
+                <h3>✅ System Running Successfully</h3>
+                <div class="property-details">
+                    <div class="detail-row"><strong>🔍 Search Areas:</strong> Kraimorie, Burgas - Apartments & Houses</div>
+                    <div class="detail-row"><strong>⭐ Special Focus:</strong> Monitoring for Argosdom properties</div>
+                    <div class="detail-row"><strong>⏰ Next Check:</strong> Daily at 23:57 UTC</div>
+                    <div class="detail-row"><strong>📊 Today's Result:</strong> No new properties found</div>
+                </div>
+            </div>
+        </div>
+"""
 
         html += """
         <div class="footer">
@@ -159,17 +178,20 @@ class GmailNotifier:
     def send_notification(self, new_apartments, new_houses, argosdom_apartments, argosdom_houses, timestamp):
         """Send email notification via Gmail SMTP"""
         if not self.should_send_email(new_apartments, new_houses, argosdom_apartments, argosdom_houses):
-            logging.info("📧 No email sent - no new properties or Argosdom properties")
+            logging.info("📧 No email sent - Gmail not configured")
             return True
 
         try:
             total_new = len(new_apartments) + len(new_houses)
             total_argosdom = len(argosdom_apartments) + len(argosdom_houses)
 
-            # Create subject
-            subject = f"🏠 Kraimorie Alert: {total_new} New Properties"
-            if total_argosdom > 0:
-                subject += f" + {total_argosdom} Argosdom"
+            # Create subject based on findings
+            if total_new > 0 or total_argosdom > 0:
+                subject = f"🏠 Kraimorie Alert: {total_new} New Properties"
+                if total_argosdom > 0:
+                    subject += f" + {total_argosdom} Argosdom"
+            else:
+                subject = "🔍 Kraimorie Daily Report: No New Properties"
 
             # Create message
             msg = MIMEMultipart('alternative')
