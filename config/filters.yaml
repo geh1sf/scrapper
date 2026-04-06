@@ -4,9 +4,10 @@
 locations:
   - city: "Kraimorie"   # Kraimorie specifically
     region_id: 2
-    location_ids: 300   # Kraimorie location ID
+    location_ids: 300
+    section_ids: 25  # The missing piece!
 
-# Removed - using direct location ID instead of keywords
+# Removed - using correct location_ids + section_ids now
 
 # Property types to search - apartments and houses only
 search_property_types:
@@ -48,12 +49,10 @@ include_keywords: []  # General keywords
   # - "паркинг"    # parking
   # - "тераса"     # terrace
 
-# Lister/Agent filters
+# Lister/Agent filters - ONLY Argosdom agency
 preferred_listers:
-  []  # Add agent/company names you prefer
-  # - "Agency Name"
-  # - "Agent Name"
+  - "argosdom"      # Argosdom agency
+  - "argosdom.alo.bg"
+  - "Argosdom"
 
-excluded_listers:
-  []  # Add agent/company names to avoid
-  # - "Unwanted Agency"
+excluded_listers: []  # No excluded agencies

@@ -102,6 +102,9 @@ class AloPropertyScraper:
                 if location.get('location_ids'):
                     params['location_ids'] = location['location_ids']
 
+                if location.get('section_ids'):
+                    params['section_ids'] = location['section_ids']
+
                 query_string = urlencode(params)
                 url = f"{base_url}?{query_string}"
                 search_label = f"{location['city']} - {prop_type}"
@@ -187,14 +190,23 @@ class AloPropertyScraper:
             publisher_elem = property_element.find('div', class_='listtop-publisher')
             if publisher_elem:
                 publisher_text = publisher_elem.get_text(strip=True)
-                # Clean up the publisher name
-                import re
-                publisher_lines = publisher_text.split('\n')
-                for line in publisher_lines:
-                    line = line.strip()
-                    if line and not re.match(r'^\d+\s*(ден|час|минут)', line):  # Skip time info
-                        property_data['lister'] = line
+
+                # Also check for agency links/usernames
+                agency_links = property_element.find_all('a', href=True)
+                for link in agency_links:
+                    href = link.get('href', '')
+                    if 'argosdom' in href.lower():
+                        property_data['lister'] = 'argosdom'
                         break
+
+                if not property_data['lister']:  # If no agency link found, use text
+                    import re
+                    publisher_lines = publisher_text.split('\n')
+                    for line in publisher_lines:
+                        line = line.strip()
+                        if line and not re.match(r'^\d+\s*(ден|час|минут)', line):  # Skip time info
+                            property_data['lister'] = line
+                            break
 
             # Extract area and other details from the full text
             full_text = property_element.get_text()
@@ -224,6 +236,22 @@ class AloPropertyScraper:
             full_text = f"{title} {location}".lower()
             lister = property_data.get('lister', '').lower()
 
+            # Debug logging for first few properties
+            if hasattr(self, '_debug_count'):
+                self._debug_count += 1
+            else:
+                self._debug_count = 1
+
+            debug_this = self._debug_count <= 5  # Debug first 5 properties
+
+            if debug_this:
+                logging.info(f"🔍 DEBUGGING PROPERTY {self._debug_count}:")
+                logging.info(f"  Title: '{property_data.get('title', '')}'")
+                logging.info(f"  Location: '{property_data.get('location', '')}'")
+                logging.info(f"  Floor: '{property_data.get('floor', '')}'")
+                logging.info(f"  Search city: '{property_data.get('search_city', '')}'")
+                logging.info(f"  Full text: '{full_text}'")
+
             # Check exclude keywords
             exclude_keywords = self.filters.get('exclude_keywords', [])
             for keyword in exclude_keywords:
@@ -241,7 +269,7 @@ class AloPropertyScraper:
                     logging.debug(f"Property excluded: missing required keywords {include_keywords}")
                     return False
 
-            # Removed Kraimorie keyword filtering - now using direct location ID
+            # Removed Kraimorie keyword filtering - now using correct location_ids + section_ids
 
             # Check property type
             property_types = self.filters.get('property_type', [])
@@ -259,8 +287,17 @@ class AloPropertyScraper:
                 has_preferred_lister = any(
                     preferred.lower() in lister for preferred in preferred_listers
                 )
+
+                if debug_this:
+                    logging.info(f"  Lister check: '{lister}', preferred={preferred_listers}")
+                    logging.info(f"  Has preferred lister: {has_preferred_lister}")
+                    for preferred in preferred_listers:
+                        found = preferred.lower() in lister
+                        logging.info(f"    '{preferred}' in lister: {found}")
+
                 if not has_preferred_lister:
-                    logging.debug(f"Property excluded: lister not in preferred list")
+                    if debug_this:
+                        logging.info(f"  ❌ EXCLUDED: Lister not in preferred list")
                     return False
 
             # Check excluded listers
@@ -365,11 +402,12 @@ class AloPropertyScraper:
                     # Add city information to property data
                     property_data['search_city'] = city_name
 
-                    # Debug for first page of first city only
-                    if page_num == 1 and city_name == search_urls[0][1] and i < 3:
+                    # Debug for first page of first city - show more properties to debug location issue
+                    if page_num == 1 and city_name == search_urls[0][1] and i < 10:
                         logging.info(f"{city_name} page {page_num}, Property {i+1} extracted data:")
                         for key, value in property_data.items():
                             logging.info(f"  {key}: '{value}'")
+                        logging.info(f"  Current URL being scraped: {current_url}")
                         logging.info(f"  meets_criteria: {self.meets_criteria(property_data)}")
                         logging.info(f"  has_url: {bool(property_data['url'])}")
                         logging.info("---")

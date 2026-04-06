@@ -24,13 +24,59 @@ def load_results():
 
     return latest, history
 
-def generate_property_cards(properties: List[Dict]) -> str:
-    """Generate HTML for property cards"""
-    if not properties:
-        return '<div class="no-properties">🏠 No new properties found in the latest scan.</div>'
+def group_properties_by_type(properties: List[Dict]) -> Dict[str, List[Dict]]:
+    """Group properties by broker and type"""
+    grouped = {
+        'argosdom_houses': [],
+        'argosdom_apartments': [],
+        'other_houses': [],
+        'other_apartments': []
+    }
 
-    html = ""
+    for prop in properties:
+        lister = prop.get('lister', '').lower()
+        title = prop.get('title', '').lower()
+        search_city = prop.get('search_city', '').lower()
+
+        # Check if it's from Argosdom
+        is_argosdom = any(keyword in lister for keyword in ['argosdom', 'argos'])
+
+        # Check if it's a house or apartment
+        is_house = any(keyword in title or keyword in search_city for keyword in [
+            'къща', 'вила', 'house', 'villa', 'houses'
+        ])
+
+        # Categorize
+        if is_argosdom and is_house:
+            grouped['argosdom_houses'].append(prop)
+        elif is_argosdom:
+            grouped['argosdom_apartments'].append(prop)
+        elif is_house:
+            grouped['other_houses'].append(prop)
+        else:
+            grouped['other_apartments'].append(prop)
+
+    return grouped
+
+def generate_property_section(title: str, properties: List[Dict], emoji: str = "🏠") -> str:
+    """Generate HTML for a property section"""
+    if not properties:
+        return f"""
+        <div class="property-section">
+            <h2 class="section-title">{emoji} {title} <span class="section-count">(0)</span></h2>
+            <div class="no-properties">No properties found in this category.</div>
+        </div>
+        """
+
+    html = f"""
+    <div class="property-section">
+        <h2 class="section-title">{emoji} {title} <span class="section-count">({len(properties)})</span></h2>
+        <div class="properties-grid">
+    """
+
     for i, prop in enumerate(properties, 1):
+        lister_info = f"<div class='info-item'><strong>👤 Listed by:</strong> {prop.get('lister', 'Not specified')}</div>" if prop.get('lister') else ""
+
         html += f"""
         <div class="property-card">
             <div class="property-header">
@@ -43,13 +89,60 @@ def generate_property_cards(properties: List[Dict]) -> str:
                     <span class="info-item">📍 {prop.get('location', 'Location not specified')}</span>
                     <span class="info-item">📐 {prop.get('area', 'Area not specified')}</span>
                     <span class="info-item">🏢 {prop.get('floor', 'Floor not specified')}</span>
+                    <span class="info-item">🏙️ {prop.get('search_city', 'Not specified')}</span>
+                    {lister_info}
                 </div>
                 <div class="property-actions">
-                    <a href="{prop.get('url', '#')}" target="_blank" class="view-property">View Property</a>
+                    <a href="{prop.get('url', '#')}" target="_blank" class="view-property">View Property on alo.bg</a>
                 </div>
             </div>
         </div>
         """
+
+    html += """
+        </div>
+    </div>
+    """
+
+    return html
+
+def generate_organized_properties(properties: List[Dict]) -> str:
+    """Generate organized HTML for all properties"""
+    if not properties:
+        return '<div class="no-properties">🏠 No new properties found in the latest scan.</div>'
+
+    grouped = group_properties_by_type(properties)
+
+    html = ""
+
+    # Section 1: Argosdom Houses
+    html += generate_property_section(
+        "Argosdom Houses",
+        grouped['argosdom_houses'],
+        "🏡"
+    )
+
+    # Section 2: Argosdom Apartments
+    html += generate_property_section(
+        "Argosdom Apartments",
+        grouped['argosdom_apartments'],
+        "🏢"
+    )
+
+    # Section 3: Other Houses
+    html += generate_property_section(
+        "Other Agency Houses",
+        grouped['other_houses'],
+        "🏠"
+    )
+
+    # Section 4: Other Apartments
+    html += generate_property_section(
+        "Other Agency Apartments",
+        grouped['other_apartments'],
+        "🏘️"
+    )
+
     return html
 
 def generate_history_chart(history: List[Dict]) -> str:
@@ -121,7 +214,10 @@ def generate_website():
         .stat-number {{ font-size: 2em; font-weight: bold; color: #3498db; }}
         .stat-label {{ color: #7f8c8d; margin-top: 5px; }}
 
-        .properties-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin: 30px 0; }}
+        .property-section {{ margin: 40px 0; }}
+        .section-title {{ color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 30px; }}
+        .section-count {{ color: #7f8c8d; font-weight: normal; }}
+        .properties-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin: 20px 0; }}
         .property-card {{ background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; }}
         .property-card:hover {{ transform: translateY(-2px); }}
         .property-header {{ background: #3498db; color: white; padding: 20px; }}
@@ -179,9 +275,7 @@ def generate_website():
 
         {generate_history_chart(history)}
 
-        <div class="properties-grid">
-            {generate_property_cards(properties)}
-        </div>
+        {generate_organized_properties(properties)}
 
         <div class="footer">
             <p>🤖 Powered by GitHub Actions • 🔄 Updates daily at 8:00 AM UTC</p>
