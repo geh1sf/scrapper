@@ -196,6 +196,10 @@ def generate_website():
     with open('docs/index.html', 'w', encoding='utf-8') as f:
         f.write(html)
 
+    # Disable Jekyll processing
+    with open('docs/.nojekyll', 'w') as f:
+        f.write('')
+
     print("🌐 Website generated successfully!")
 
 if __name__ == "__main__":

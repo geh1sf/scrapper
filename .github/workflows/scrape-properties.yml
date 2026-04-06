@@ -12,9 +12,17 @@ on:
   push:
     branches: [ main ]
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
     - name: 🔄 Checkout repository
@@ -60,10 +68,11 @@ jobs:
         git diff --staged --quiet || git commit -m "🏠 Update properties $(date '+%Y-%m-%d %H:%M')"
         git push
 
-    - name: 🌐 Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v4
-      if: github.ref == 'refs/heads/main'
+    - name: 📤 Upload Pages artifact
+      uses: actions/upload-pages-artifact@v3
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./docs
-        force_orphan: true
+        path: ./docs
+
+    - name: 🌐 Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
