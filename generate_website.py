@@ -32,10 +32,8 @@ def group_properties_by_agency(properties: List[Dict]) -> Dict[str, List[Dict]]:
     }
 
     for prop in properties:
-        lister = prop.get('lister', '').lower()
-
-        # Check if it's from Argosdom
-        is_argosdom = any(keyword in lister for keyword in ['argosdom', 'argos'])
+        # Use the is_argosdom flag from property extraction
+        is_argosdom = prop.get('is_argosdom', False)
 
         # Categorize by agency
         if is_argosdom:
@@ -145,7 +143,10 @@ def generate_website():
     latest, history = load_results()
 
     # Get data
-    properties = latest.get('new_properties', [])
+    new_properties = latest.get('new_properties', [])
+    all_properties = latest.get('all_current_properties', [])
+    # Show all current properties on website, not just new ones
+    properties = all_properties if all_properties else new_properties
     timestamp = latest.get('timestamp', '')
     stats = latest.get('stats', {})
     error = latest.get('error')
@@ -161,8 +162,13 @@ def generate_website():
         formatted_time = 'Unknown'
 
     # Status
-    status_class = 'error' if error else ('success' if properties else 'no-results')
-    status_text = error if error else (f"Found {len(properties)} new properties" if properties else "No new properties")
+    status_class = 'error' if error else ('success' if new_properties else 'no-results')
+    if error:
+        status_text = error
+    elif new_properties:
+        status_text = f"Found {len(new_properties)} new properties (showing {len(properties)} total available)"
+    else:
+        status_text = f"No new properties (showing {len(properties)} total available)" if properties else "No properties available"
 
     # Generate HTML
     html = f"""
@@ -231,8 +237,12 @@ def generate_website():
 
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-number">{len(properties)}</div>
+                <div class="stat-number">{len(new_properties)}</div>
                 <div class="stat-label">New Properties</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{len(properties)}</div>
+                <div class="stat-label">Available Now</div>
             </div>
             <div class="stat-card">
                 <div class="stat-number">{latest.get('total_properties_scanned', 0)}</div>

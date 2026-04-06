@@ -30,10 +30,8 @@ class SendGridNotifier:
         }
 
         for prop in properties:
-            lister = prop.get('lister', '').lower()
-
-            # Check if it's from Argosdom
-            is_argosdom = any(keyword in lister for keyword in ['argosdom', 'argos'])
+            # Use the is_argosdom flag from property extraction
+            is_argosdom = prop.get('is_argosdom', False)
 
             # Categorize by agency
             if is_argosdom:

@@ -56,18 +56,19 @@ def main():
         # Filter new properties
         new_properties = tracker.filter_new_properties(all_properties)
 
-        # Send email notification if configured
-        notifier = SendGridNotifier()
-        if notifier.enabled:
-            email_sent = notifier.send_notification(new_properties)
-            if email_sent:
-                logging.info("📧 Email notification sent successfully")
+        # Send email notification if configured (only if new properties)
+        if new_properties:
+            notifier = SendGridNotifier()
+            if notifier.enabled:
+                email_sent = notifier.send_notification(new_properties)
+                if email_sent:
+                    logging.info("📧 Email notification sent successfully")
+                else:
+                    logging.warning("📧 Email notification failed")
             else:
-                logging.warning("📧 Email notification failed")
-        else:
-            logging.info("📧 Email not configured, skipping notification")
+                logging.info("📧 Email not configured, skipping notification")
 
-        # Save results
+        # Save results (including current available properties for website)
         save_results(new_properties, tracker.get_stats(), all_properties)
 
         logging.info(f"✅ GitHub scraper completed successfully!")
@@ -88,6 +89,7 @@ def save_results(new_properties, stats, all_properties=None):
     current_results = {
         'timestamp': timestamp,
         'new_properties': new_properties,
+        'all_current_properties': all_properties if all_properties else [],
         'stats': stats,
         'total_properties_scanned': len(all_properties) if all_properties else 0
     }
@@ -135,6 +137,7 @@ def save_error(error_msg):
         'timestamp': timestamp,
         'error': error_msg,
         'new_properties': [],
+        'all_current_properties': [],
         'stats': {'total_properties_seen': 0, 'properties_today': 0}
     }
 

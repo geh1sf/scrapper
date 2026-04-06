@@ -35,8 +35,6 @@ price_range:
   max: 800000  # Maximum price in BGN (to include houses/villas)
 
 features:
-  # Floor filters - only up to 2nd floor, no minimum
-  max_floor: 2     # Maximum 2nd floor (ground=0, 1st=1, 2nd=2)
   min_area: 30     # Minimum area in sqm
   max_area: 300    # Maximum area in sqm (suitable for houses)
 

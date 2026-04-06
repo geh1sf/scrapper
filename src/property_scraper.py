@@ -191,15 +191,16 @@ class AloPropertyScraper:
             if publisher_elem:
                 publisher_text = publisher_elem.get_text(strip=True)
 
-                # Also check for agency links/usernames
+                # Check specifically for Argosdom user URL: alo.bg/users/argosdom
                 agency_links = property_element.find_all('a', href=True)
                 for link in agency_links:
                     href = link.get('href', '')
-                    if 'argosdom' in href.lower():
+                    if '/users/argosdom' in href.lower():
                         property_data['lister'] = 'argosdom'
+                        property_data['is_argosdom'] = True
                         break
 
-                if not property_data['lister']:  # If no agency link found, use text
+                if not property_data.get('is_argosdom'):  # If not Argosdom, get general lister info
                     import re
                     publisher_lines = publisher_text.split('\n')
                     for line in publisher_lines:
@@ -207,6 +208,7 @@ class AloPropertyScraper:
                         if line and not re.match(r'^\d+\s*(ден|час|минут)', line):  # Skip time info
                             property_data['lister'] = line
                             break
+                    property_data['is_argosdom'] = False
 
             # Extract area and other details from the full text
             full_text = property_element.get_text()
@@ -217,11 +219,21 @@ class AloPropertyScraper:
             if area_match:
                 property_data['area'] = f"{area_match.group(1)} кв.м"
 
-            # Extract floor
-            floor_pattern = r'(\d+)\s*ет(?:аж)?'
-            floor_match = re.search(floor_pattern, full_text, re.IGNORECASE)
-            if floor_match:
-                property_data['floor'] = f"{floor_match.group(1)} ет"
+            # Extract floor - be more specific to avoid false matches
+            floor_patterns = [
+                r'(\d+)\s*-?(?:ти|ри|ви)?\s*етаж',  # "5-ти етаж", "2 етаж"
+                r'ет\.?\s*(\d+)',                    # "ет. 3", "ет.2"
+                r'(\d+)\s*ет\.?(?:\s|$)',           # "3 ет.", "2 ет "
+            ]
+
+            for pattern in floor_patterns:
+                floor_match = re.search(pattern, full_text, re.IGNORECASE)
+                if floor_match:
+                    floor_num = floor_match.group(1)
+                    # Validate it's a reasonable floor number
+                    if int(floor_num) <= 20:  # Sanity check
+                        property_data['floor'] = f"{floor_num} ет"
+                        break
 
         except Exception as e:
             logging.error(f"Error extracting property info: {e}")
@@ -249,6 +261,9 @@ class AloPropertyScraper:
                 logging.info(f"  Title: '{property_data.get('title', '')}'")
                 logging.info(f"  Location: '{property_data.get('location', '')}'")
                 logging.info(f"  Floor: '{property_data.get('floor', '')}'")
+                logging.info(f"  Price: '{property_data.get('price', '')}'")
+                logging.info(f"  Area: '{property_data.get('area', '')}'")
+                logging.info(f"  Lister: '{property_data.get('lister', '')}'")
                 logging.info(f"  Search city: '{property_data.get('search_city', '')}'")
                 logging.info(f"  Full text: '{full_text}'")
 
@@ -281,43 +296,22 @@ class AloPropertyScraper:
                     logging.debug(f"Property excluded: type not in {property_types}")
                     return False
 
-            # Check preferred listers
-            preferred_listers = self.filters.get('preferred_listers', [])
-            if preferred_listers:
-                has_preferred_lister = any(
-                    preferred.lower() in lister for preferred in preferred_listers
-                )
+            # Argosdom properties are prioritized but we don't exclude others
+            # All properties that meet other criteria are accepted
+            is_argosdom = property_data.get('is_argosdom', False)
 
-                if debug_this:
-                    logging.info(f"  Lister check: '{lister}', preferred={preferred_listers}")
-                    logging.info(f"  Has preferred lister: {has_preferred_lister}")
-                    for preferred in preferred_listers:
-                        found = preferred.lower() in lister
-                        logging.info(f"    '{preferred}' in lister: {found}")
+            if debug_this:
+                logging.info(f"  Is Argosdom: {is_argosdom}")
+                logging.info(f"  Lister: '{lister}'")
 
-                if not has_preferred_lister:
-                    if debug_this:
-                        logging.info(f"  ❌ EXCLUDED: Lister not in preferred list")
-                    return False
-
-            # Check excluded listers
+            # Check excluded listers (if any)
             excluded_listers = self.filters.get('excluded_listers', [])
             for excluded in excluded_listers:
                 if excluded.lower() in lister:
                     logging.debug(f"Property excluded due to lister: {excluded}")
                     return False
 
-            # Check floor restrictions
-            max_floor = self.filters.get('features', {}).get('max_floor')
-            if max_floor is not None:
-                floor_text = property_data.get('floor', '')
-                import re
-                floor_match = re.search(r'(\d+)', floor_text)
-                if floor_match:
-                    floor_num = int(floor_match.group(1))
-                    if floor_num > max_floor:
-                        logging.debug(f"Property excluded: floor {floor_num} > max {max_floor}")
-                        return False
+# Floor filtering removed as requested
 
             # Check area restrictions
             features = self.filters.get('features', {})
@@ -430,5 +424,14 @@ class AloPropertyScraper:
                 logging.info("⏸️ Pausing between cities...")
                 time.sleep(3)
 
+        # Sort properties: Argosdom first, then others
+        argosdom_properties = [p for p in all_properties if p.get('is_argosdom', False)]
+        other_properties = [p for p in all_properties if not p.get('is_argosdom', False)]
+
+        sorted_properties = argosdom_properties + other_properties
+
         logging.info(f"🎯 Grand total: Found {len(all_properties)} matching properties across all locations")
-        return all_properties
+        logging.info(f"⭐ Argosdom properties: {len(argosdom_properties)}")
+        logging.info(f"🏠 Other properties: {len(other_properties)}")
+
+        return sorted_properties
