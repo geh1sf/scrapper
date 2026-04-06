@@ -22,7 +22,10 @@
         .stat-number { font-size: 2em; font-weight: bold; color: #3498db; }
         .stat-label { color: #7f8c8d; margin-top: 5px; }
 
-        .properties-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin: 30px 0; }
+        .property-section { margin: 40px 0; }
+        .section-title { color: #2c3e50; border-bottom: 3px solid #3498db; padding-bottom: 10px; margin-bottom: 30px; }
+        .section-count { color: #7f8c8d; font-weight: normal; }
+        .properties-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin: 20px 0; }
         .property-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: transform 0.2s; }
         .property-card:hover { transform: translateY(-2px); }
         .property-header { background: #3498db; color: white; padding: 20px; }
@@ -52,20 +55,20 @@
         <div class="header">
             <h1>🏠 Sofia Property Scraper</h1>
             <div class="subtitle">Automated apartment hunting in Sofia, Bulgaria</div>
-            <div class="subtitle">Last updated: 2026-04-06 08:57 UTC</div>
+            <div class="subtitle">Last updated: 2026-04-06 10:12 UTC</div>
         </div>
 
-        <div class="status success">
-            📊 Status: Found 9 new properties
+        <div class="status no-results">
+            📊 Status: No new properties
         </div>
 
         <div class="stats">
             <div class="stat-card">
-                <div class="stat-number">9</div>
+                <div class="stat-number">0</div>
                 <div class="stat-label">New Properties</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">50</div>
+                <div class="stat-number">0</div>
                 <div class="stat-label">Total Scanned</div>
             </div>
             <div class="stat-card">
@@ -73,7 +76,7 @@
                 <div class="stat-label">All Time Tracked</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number">4</div>
+                <div class="stat-number">6</div>
                 <div class="stat-label">Days Active</div>
             </div>
         </div>
@@ -82,176 +85,12 @@
     <div id="history-chart">
         <h3>📊 Last 14 Days Activity</h3>
         <div class="chart-container">
-            <div class='chart-bar' style='height: 5px' title='2026-04-06: 0 properties'></div>, <div class='chart-bar' style='height: 5px' title='2026-04-06: 0 properties'></div>, <div class='chart-bar' style='height: 30px' title='2026-04-06: 3 properties'></div>, <div class='chart-bar' style='height: 90px' title='2026-04-06: 9 properties'></div>
+            <div class='chart-bar' style='height: 5px' title='2026-04-06: 0 properties'></div>, <div class='chart-bar' style='height: 5px' title='2026-04-06: 0 properties'></div>, <div class='chart-bar' style='height: 30px' title='2026-04-06: 3 properties'></div>, <div class='chart-bar' style='height: 90px' title='2026-04-06: 9 properties'></div>, <div class='chart-bar' style='height: 5px' title='2026-04-06: 0 properties'></div>, <div class='chart-bar' style='height: 5px' title='2026-04-06: 0 properties'></div>
         </div>
     </div>
     
 
-        <div class="properties-grid">
-            
-        <div class="property-card">
-            <div class="property-header">
-                <h3>🏠 Property #1</h3>
-                <div class="property-price">1 150 000 €</div>
-            </div>
-            <div class="property-details">
-                <h4>Луксозен дизайнерски апартамент - Първа линия море!</h4>
-                <div class="property-info">
-                    <span class="info-item">📍 Лазур, Бургас</span>
-                    <span class="info-item">📐 166 кв.м</span>
-                    <span class="info-item">🏢 </span>
-                </div>
-                <div class="property-actions">
-                    <a href="https://www.alo.bg/luksozen-dizainerski-apartament-parva-liniya-more-10880966" target="_blank" class="view-property">View Property</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <div class="property-header">
-                <h3>🏠 Property #2</h3>
-                <div class="property-price">100 792 €</div>
-            </div>
-            <div class="property-details">
-                <h4>Двустаен апартамент в ”Гранд Плаза Резидeнсес”</h4>
-                <div class="property-info">
-                    <span class="info-item">📍 Хоризонт, Бургас</span>
-                    <span class="info-item">📐 73 кв.м</span>
-                    <span class="info-item">🏢 2 ет</span>
-                </div>
-                <div class="property-actions">
-                    <a href="https://www.alo.bg/dvustaen-apartament-v-grand-plaza-rezidenses-10636779" target="_blank" class="view-property">View Property</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <div class="property-header">
-                <h3>🏠 Property #3</h3>
-                <div class="property-price">168 900 €</div>
-            </div>
-            <div class="property-details">
-                <h4>Уютен тристаен апартамент в сърцето на Сарафово</h4>
-                <div class="property-info">
-                    <span class="info-item">📍 Сарафово, Бургас</span>
-                    <span class="info-item">📐 112.35 кв.м</span>
-                    <span class="info-item">🏢 </span>
-                </div>
-                <div class="property-actions">
-                    <a href="https://www.alo.bg/uyuten-tristaen-apartament-v-sarceto-na-sarafovo-10378872" target="_blank" class="view-property">View Property</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <div class="property-header">
-                <h3>🏠 Property #4</h3>
-                <div class="property-price">125 000 €</div>
-            </div>
-            <div class="property-details">
-                <h4>Бургас, кв. Ветрен, къща 84 кв.м, в строеж</h4>
-                <div class="property-info">
-                    <span class="info-item">📍 Ветрен, Бургас</span>
-                    <span class="info-item">📐 84 кв.м</span>
-                    <span class="info-item">🏢 </span>
-                </div>
-                <div class="property-actions">
-                    <a href="https://www.alo.bg/burgas-kv-vetren-kashta-84-kv-m-v-stroej-11038379" target="_blank" class="view-property">View Property</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <div class="property-header">
-                <h3>🏠 Property #5</h3>
-                <div class="property-price">400 000 €</div>
-            </div>
-            <div class="property-details">
-                <h4>Нова модерна двуетажна къща с три спални и паркомясто в близост до гр. Бургас!</h4>
-                <div class="property-info">
-                    <span class="info-item">📍 Сарафово, Бургас</span>
-                    <span class="info-item">📐 196 кв.м</span>
-                    <span class="info-item">🏢 </span>
-                </div>
-                <div class="property-actions">
-                    <a href="https://www.alo.bg/nova-moderna-dvuetajna-kashta-s-tri-spalni-i-parkomyasto-v-blizost-do-gr-burgas-9574243" target="_blank" class="view-property">View Property</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <div class="property-header">
-                <h3>🏠 Property #6</h3>
-                <div class="property-price">440 000 €</div>
-            </div>
-            <div class="property-details">
-                <h4>Двуетажна самостоятелна къща с гледка море в Крайморие</h4>
-                <div class="property-info">
-                    <span class="info-item">📍 Крайморие, Бургас</span>
-                    <span class="info-item">📐 201 кв.м</span>
-                    <span class="info-item">🏢 </span>
-                </div>
-                <div class="property-actions">
-                    <a href="https://www.alo.bg/dvuetajna-samostoyatelna-kashta-s-gledka-more-v-kraimorie-10690735" target="_blank" class="view-property">View Property</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <div class="property-header">
-                <h3>🏠 Property #7</h3>
-                <div class="property-price">256 000 €</div>
-            </div>
-            <div class="property-details">
-                <h4>Модерна нова къща в Крайморие в комплекс на първа линия</h4>
-                <div class="property-info">
-                    <span class="info-item">📍 Крайморие, Бургас</span>
-                    <span class="info-item">📐 148 кв.м</span>
-                    <span class="info-item">🏢 </span>
-                </div>
-                <div class="property-actions">
-                    <a href="https://www.alo.bg/moderna-nova-kashta-v-kraimorie-v-kompleks-na-parva-liniya-10690475" target="_blank" class="view-property">View Property</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <div class="property-header">
-                <h3>🏠 Property #8</h3>
-                <div class="property-price">139 900 €</div>
-            </div>
-            <div class="property-details">
-                <h4>Етаж от масивна Двуетажна къща с двор!!!</h4>
-                <div class="property-info">
-                    <span class="info-item">📍 Меден Рудник, Бургас</span>
-                    <span class="info-item">📐 74 кв.м</span>
-                    <span class="info-item">🏢 </span>
-                </div>
-                <div class="property-actions">
-                    <a href="https://www.alo.bg/etaj-ot-masivna-dvuetajna-kashta-s-dvor-10756848" target="_blank" class="view-property">View Property</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="property-card">
-            <div class="property-header">
-                <h3>🏠 Property #9</h3>
-                <div class="property-price">228 000 €</div>
-            </div>
-            <div class="property-details">
-                <h4>Самостоятелен етаж от къща с голям двор</h4>
-                <div class="property-info">
-                    <span class="info-item">📍 Сарафово, Бургас</span>
-                    <span class="info-item">📐 75 кв.м</span>
-                    <span class="info-item">🏢 </span>
-                </div>
-                <div class="property-actions">
-                    <a href="https://www.alo.bg/samostoyatelen-etaj-ot-kashta-s-golyam-dvor-11031084" target="_blank" class="view-property">View Property</a>
-                </div>
-            </div>
-        </div>
-        
-        </div>
+        <div class="no-properties">🏠 No new properties found in the latest scan.</div>
 
         <div class="footer">
             <p>🤖 Powered by GitHub Actions • 🔄 Updates daily at 8:00 AM UTC</p>
