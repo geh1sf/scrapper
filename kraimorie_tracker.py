@@ -106,6 +106,7 @@ class KraimorieTracker:
             'location': '',
             'url': '',
             'lister': '',
+            'image_url': '',
             'is_argosdom': False,
             'listing_type': 'regular'
         }
@@ -139,6 +140,16 @@ class KraimorieTracker:
             price_match = re.search(r'([\d\s,]+)\s*€', full_text)
             if price_match:
                 prop['price'] = f"{price_match.group(1).strip()} €"
+
+            # Image URL - get first image
+            img_element = element.find('img', class_='listvip-image-img') or element.find('img')
+            if img_element:
+                img_src = img_element.get('src') or img_element.get('data-src')
+                if img_src and not img_src.endswith('vip.svg'):  # Skip VIP badge images
+                    # Convert relative URLs to absolute URLs
+                    if not img_src.startswith('http'):
+                        img_src = f"https://www.alo.bg/{img_src.lstrip('/')}"
+                    prop['image_url'] = img_src
 
             # Check for Argosdom
             all_links = element.find_all('a', href=True)

@@ -26,12 +26,7 @@ def load_daily_results():
 def generate_property_section(title, properties, highlight_color="#3498db"):
     """Generate HTML section for properties"""
     if not properties:
-        return f"""
-        <div class="section">
-            <h2 style="color: {highlight_color};">{title} (0)</h2>
-            <div class="no-properties">No properties in this category today.</div>
-        </div>
-        """
+        return ""  # Don't show empty sections
 
     html = f"""
     <div class="section">
@@ -43,11 +38,21 @@ def generate_property_section(title, properties, highlight_color="#3498db"):
         argosdom_badge = '<span class="argosdom-badge">ARGOSDOM!</span>' if prop.get('is_argosdom') else ''
         vip_badge = '<span class="vip-badge">VIP</span>' if prop.get('listing_type') == 'vip' else ''
 
+        # Add image if available
+        image_html = ""
+        if prop.get('image_url'):
+            image_html = f"""
+            <div class="property-image">
+                <img src="{prop.get('image_url')}" alt="Property image" onerror="this.style.display='none'" loading="lazy">
+            </div>
+            """
+
         html += f"""
         <div class="property-card">
             <div class="property-header">
                 <h3>Property #{i} {argosdom_badge} {vip_badge}</h3>
             </div>
+            {image_html}
             <div class="property-content">
                 <h4>{prop.get('title', 'No title')}</h4>
                 <div class="property-details">
@@ -63,6 +68,64 @@ def generate_property_section(title, properties, highlight_color="#3498db"):
         </div>
     </div>
     """
+
+    return html
+
+def categorize_properties(properties):
+    """Categorize properties by type"""
+    apartments = []
+    houses = []
+    land = []
+    commercial = []
+
+    for prop in properties:
+        title = prop.get('title', '').lower()
+        if any(word in title for word in ['апартамент', 'студио', 'стая']):
+            apartments.append(prop)
+        elif any(word in title for word in ['къща', 'вила', 'еднофамилна']):
+            houses.append(prop)
+        elif any(word in title for word in ['парцел', 'упи', 'имот']):
+            land.append(prop)
+        elif any(word in title for word in ['магазин', 'офис', 'търговск']):
+            commercial.append(prop)
+        else:
+            apartments.append(prop)  # Default to apartments
+
+    return apartments, houses, land, commercial
+
+def generate_property_sections(new_properties, argosdom_properties):
+    """Generate organized property sections"""
+    html = ""
+
+    # Split new properties by type
+    new_apartments, new_houses, new_land, new_commercial = categorize_properties(new_properties)
+
+    # NEW PROPERTIES SECTIONS
+    if new_properties:
+        html += '<div class="section-group"><h1 style="color: #e74c3c; text-align: center; margin: 40px 0;">🚨 NEW PROPERTIES TODAY</h1>'
+
+        html += generate_property_section("🏠 New Apartments", new_apartments, "#e74c3c")
+        html += generate_property_section("🏡 New Houses", new_houses, "#e74c3c")
+        html += generate_property_section("🌳 New Land", new_land, "#e74c3c")
+        html += generate_property_section("🏢 New Commercial", new_commercial, "#e74c3c")
+
+        html += '</div>'
+    else:
+        html += '<div class="section"><h2 style="color: #666; text-align: center;">No new properties today</h2></div>'
+
+    # ARGOSDOM SECTION (only if there are properties)
+    if argosdom_properties:
+        html += '<div class="section-group"><h1 style="color: #9b59b6; text-align: center; margin: 40px 0;">⭐ ARGOSDOM PROPERTIES</h1>'
+
+        # Split Argosdom properties by type
+        argosdom_apartments, argosdom_houses, argosdom_land, argosdom_commercial = categorize_properties(argosdom_properties)
+
+        html += generate_property_section("🏠 Argosdom Apartments", argosdom_apartments, "#9b59b6")
+        html += generate_property_section("🏡 Argosdom Houses", argosdom_houses, "#9b59b6")
+        html += generate_property_section("🌳 Argosdom Land", argosdom_land, "#9b59b6")
+        html += generate_property_section("🏢 Argosdom Commercial", argosdom_commercial, "#9b59b6")
+
+        html += '</div>'
 
     return html
 
@@ -118,10 +181,14 @@ def generate_website():
         .stat-label {{ color: #7f8c8d; margin-top: 5px; }}
 
         .section {{ margin: 40px 0; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }}
+        .section-group {{ margin: 40px 0; }}
         .properties-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 20px; margin: 20px 0; }}
         .property-card {{ background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; }}
         .property-header {{ background: #3498db; color: white; padding: 15px; }}
         .property-header h3 {{ margin: 0; font-size: 1.1em; }}
+        .property-content {{ padding: 15px; }}
+        .property-image {{ width: 100%; height: 200px; overflow: hidden; }}
+        .property-image img {{ width: 100%; height: 100%; object-fit: cover; display: block; }}
         .property-content {{ padding: 15px; }}
         .property-content h4 {{ margin: 0 0 10px 0; color: #2c3e50; font-size: 1em; }}
         .property-details {{ margin: 10px 0; }}
@@ -173,9 +240,7 @@ def generate_website():
             </div>
         </div>
 
-        {generate_property_section("🚨 NEW PROPERTIES TODAY", new_properties, "#e74c3c")}
-
-        {generate_property_section("⭐ ALL ARGOSDOM PROPERTIES", argosdom_properties, "#9b59b6")}
+        {generate_property_sections(new_properties, argosdom_properties)}
 
         <div class="footer">
             <p>🔄 Updates automatically every day • Tracks all property types in Kraimorie</p>
