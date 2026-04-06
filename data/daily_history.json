@@ -76,5 +76,18 @@
       "commercial": 0,
       "land": 0
     }
+  },
+  {
+    "date": "2026-04-06",
+    "timestamp": "2026-04-06T11:27:50.048535+00:00",
+    "total_current": 0,
+    "new_today": 0,
+    "argosdom_count": 0,
+    "summary": {
+      "apartments": 0,
+      "houses": 0,
+      "commercial": 0,
+      "land": 0
+    }
   }
 ]
