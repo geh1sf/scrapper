@@ -30,6 +30,7 @@ class KraimorieTracker:
     def __init__(self):
         """Initialize the tracker"""
         self.base_url = "https://www.alo.bg"
+        self.today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
 
         # Apartments and Houses only for Kraimorie - TODAY'S listings only
         self.search_urls = [
@@ -49,8 +50,9 @@ class KraimorieTracker:
         self.seen_properties_file = 'data/seen_kraimorie_properties.json'
         self.results_file = 'data/daily_kraimorie_results.json'
 
-        # Load seen properties
+        # Load seen properties (reset daily since we use &after_date=dnes)
         self.seen_properties = self.load_seen_properties()
+        self.reset_daily_tracking()
 
     def load_seen_properties(self):
         """Load previously seen properties and clean up old ones"""
@@ -83,6 +85,37 @@ class KraimorieTracker:
         # Save cleaned data
         self.seen_with_dates = seen_with_dates
         return seen_properties
+
+    def reset_daily_tracking(self):
+        """Reset tracking for today since we're using &after_date=dnes"""
+        # Check if we've already reset today
+        reset_file = 'data/last_reset_date.txt'
+
+        try:
+            if os.path.exists(reset_file):
+                with open(reset_file, 'r') as f:
+                    last_reset = f.read().strip()
+
+                if last_reset != self.today:
+                    # New day - reset seen properties for today
+                    logging.info(f"New day detected ({self.today}), resetting daily tracking...")
+                    self.seen_properties = set()
+                    self.seen_with_dates = {}
+
+                    # Save reset date
+                    os.makedirs('data', exist_ok=True)
+                    with open(reset_file, 'w') as f:
+                        f.write(self.today)
+                else:
+                    logging.info(f"Already reset for today ({self.today})")
+            else:
+                # First run ever - create reset file
+                os.makedirs('data', exist_ok=True)
+                with open(reset_file, 'w') as f:
+                    f.write(self.today)
+                logging.info(f"First run - created reset tracking for {self.today}")
+        except Exception as e:
+            logging.error(f"Error with daily reset: {e}")
 
     def save_seen_properties(self):
         """Save seen properties with dates"""
